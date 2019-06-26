@@ -1,0 +1,165 @@
+from sage.all import *
+
+#differential function takes the list of matrices identified and differentiates
+#with respect to each variable to create new list of differentiated matrices
+def differential(Q,n):
+	dQlist = []
+	if n == 1:
+		j = 0
+		l = len(Q)
+		while j < l-1:
+			dQ = Q[j].apply_map(lambda q : q.derivative(R.gen()))
+			dQlist.append(dQ)
+			j = j+1
+	else:
+		
+	return dQlist
+
+	
+	
+#exterior function takes the list of differential matrices and and then wedges
+#the forms to create a new list of differential matrices of wedged forms
+def exterior(dQ,n):
+	if n == 1:
+		return dQ
+	else:
+		
+		
+#factors function takes the singularity (assuming n=1) and produces all factors
+#of the singularity to form a list of factors to be used in the construction of
+#multiplicative maps
+def factors(deg,sing):
+	m = deg
+	q = R.gen()
+	factors = []
+	while (m >= 0):
+		k = q**(deg)
+		factors.append(k)
+		factors.append((sing)/k)
+		deg -= 1
+		m -= 1
+	return factors
+
+	
+
+#mapsbtw function takes a set of maps created in module function and number of
+#variables and parses to form the Q (square) supermatrix of each map, phi or psi
+def mapsbtw(maps, n):
+	i = 0
+	j = 0
+	k = 0
+	mx = matrix.circulant(SR.var(str + ',' + str))
+	mx2 = matrix.circulant(SR.var(str + ',' + str))
+#	print(mx)
+	i = 0
+	j = 0
+	k = 0
+	while i < len(maps):
+		if i % 2 == 0:
+			mx[j,n+j] = maps[i]
+			mx2[j,n+j] = 0
+#			print(maps[i])
+			j = j + 1
+		else:
+			mx[n+k,k] = maps[i]
+			mx2[n+k,k] = 0
+#			print(maps[i])
+			k = k + 1
+		i = i + 1
+	return mx
+
+
+#mkmatrix function takes the set of factors (if n=1) or the set of bases
+#manipulations to form the twisted differential composed of the maps between the
+#specified modules 
+def mkmatrix(set,n):
+	if n == 1:
+		j = 0
+		l = len(set)
+		Q = matrix([[0,R.gen()],[R.gen(),0]])
+		Qlist = []
+
+		while j < l-1 :
+			phi = set[j]
+			Q[0,1] = phi
+			j = j+1
+			psi = set[j]
+			Q[1,0] = psi
+			j = j+1
+			Qlist.append(Q)
+		return Qlist
+		
+		
+#mult function takes the matrix factorizations, together with the maps between
+#them, and multiplies them by the differentiated twisted differential composed
+#of wedged forms to produce a matrix
+def mult(M,F,G):
+	if n == 1:
+		j = 0
+		l  = len(M) #should be equal to F length and G length
+		#only use one of them????
+		#Makes the result 0 on diagonal, it's supposed to be right????
+		newMx = []
+		while j < l:
+			newMx.append(F[j]*G[j]*M[j])
+			j = j+1
+		return newMx
+
+		
+		
+#tr function takes the matrix created by mult function and computes the trace
+def tr(M):
+	j = 0
+	l = len(M)
+	diag = []
+	while j < l-1:
+		diag = M[j].trace()
+		j = j+1
+	return diag
+
+	
+	
+#module function takes the Koszul complex and number of variables to find the
+#module which allow for the n-number of phi maps, and psi maps (contraction 
+#and wedging)
+def module(comp, n):
+	i = 0
+	print(comp.free_module())
+	maps = []
+	while i < 2**n + 1:
+		C_i = comp.free_module()
+		print(C_i)
+		i = i+1
+
+
+		
+		
+
+#Get input from user to limit to begin with
+n = input("Enter number of variables ")
+i = 0
+str = ""
+if n > 1:
+	while i < n:
+		str = str+"x_{},".format(i)
+		i = i+1
+	str = str[:-1]
+	R = PowerSeriesRing(CC,n,str)
+	#print(R)
+	K = KoszulComplex(R,R.gens())
+	print(ascii_art(K))
+	module(K,n)
+	
+#get ring and let modules be ring (only one variable)
+else :
+	d = input("Enter the degree of the singularity ")
+	R = PowerSeriesRing(CC,'x')
+	w = R.gen()**d
+	X = R; Y = R #do I need this part??? where does the complex shifting come in
+				 #for single variable???
+	set = factors(d,w)
+	Qlist = mkmatrix(set,1)
+	dQlist = differential(Qlist,n)
+	dQshift = exterior(dQlist,n)
+	newMx = mult(dQshift,Qlist,Qlist)
+	print(tr(newMx))
